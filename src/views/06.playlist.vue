@@ -2,8 +2,9 @@
   <div
     class="infinite-list"
     id="main-container"
-    v-infinite-scroll="load"
+    v-infinite-scroll="loadMore"
     v-loading="loading"
+    style="overflow:auto"
     element-loading-background="rgba(0, 0, 0, 0.5)"
   >
     <div class="playlist-container" id="playlist-container">
@@ -160,7 +161,10 @@ export default {
       page: 1,
       // 歌单详情数据
       tracks: [],
-      playlist: {},
+      playlist: {
+        creator: {}
+        // tracks: []
+      },
       // 热门评论
       hotComments: [],
       // 热门评论的个数
@@ -169,7 +173,7 @@ export default {
       comments: [],
       count: 1,
       loading: false,
-      isTrue:false
+      isTrue: false
     };
   },
   created() {
@@ -187,6 +191,7 @@ export default {
       this.playlist.createTime = moment(this.playlist.createTime).format(
         "llll"
       );
+      console.log("this.playlist.tracks", this.playlist.tracks);
       this.playlist.tracks &&
         this.playlist.tracks.map(item => {
           item.publishTime = moment(item.publishTime).format("YYYY-MM-DD");
@@ -205,7 +210,7 @@ export default {
     }).then(res => {
       // console.log(res)
       this.hotComments = res.data.hotComments || [];
-      // console.log(this.hotComments,"this.hotComments")
+      // console.log(this.hotComments, "this.hotComments");
       // 保存个数
       this.hotCount = res.data.total;
     });
@@ -227,26 +232,35 @@ export default {
       this.comments = res.data.comments;
     });
   },
-  mounted() {
-    // let that = this;
-    // document
-    //   .getElementById("main")
-    //   .addEventListener("scroll", this.scrollHandle);
-  },
+  mounted() {},
   methods: {
     // 数据下拉加载
-    load() {
-      if (this.tracks.length === this.playlist.tracks.length || this.isTrue || this.activeIndex == 2) {
+    loadMore() {
+      let timeID = null;
+      if (
+        this.activeIndex == 2 ||
+        this.tracks.length == 0 ||
+        this.tracks.length == this.playlist.length
+      ) {
         return;
       }
-      this.isTrue = true
-      this.count++;
-      this.loading = true;
-      this.tracks = _.slice(this.playlist.tracks, 0, this.count * 10);
-      setTimeout(() => {
-        this.loading = false;
-        this.isTrue = false;
-      }, 1000);
+      console.log(this.count);
+      console.log(document.getElementById("main-container").scrollHeight)
+        if (!timeID) {
+          timeID = setTimeout(() => {
+            this.count++;
+            this.loading = false;
+            let tracks =
+              _.slice(
+                this.playlist.tracks,
+                (this.count - 1) * 10,
+                this.count * 10
+              ) || [];
+            this.tracks = this.tracks.concat(tracks);
+            console.log(" this.tracks", this.tracks);
+            timeID = null;
+          }, 2000);
+        }
     },
     handleCurrentChange(val) {
       // console.log(`当前页: ${val}`);
@@ -278,7 +292,6 @@ export default {
 #main-container {
   padding: 10px, 20px;
   max-width: 100%;
-  /* overflow-y: scroll; */
 }
 .playlist-container {
   max-width: 1100px;
